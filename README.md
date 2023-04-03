@@ -3,8 +3,12 @@ This project illustrates building a Flink streaming application for detecting fr
 
 The project requires Java 11 and Flink 1.17 to run.
 
+Flink can be downloaded from https://flink.apache.org/downloads/
+
 ## Fraud Detector
-tbd
+Fraudulent transactions in an account can be detected by certain patterns in a sequence of transactions. An example of a fraudulent transaction is illustrated below with a low value transaction followed immediately by a high value transaction. The full example with details is available at [Fraud Detection Example](https://nightlies.apache.org/flink/flink-docs-release-1.17/docs/try-flink/datastream/).
+
+![Fraud Transactions]("./images/fraud-transactions.png")
 
 ## Build and Package Streaming Application
 1. Build the streaming application
@@ -50,7 +54,9 @@ In a browser, open the console at http://localhost:8081/
 4. View job and task logs
 
 In the GUI console navigate to
-path? and view logs
+Dashboard > Task Manager > Logs and view alerts in the logs
+
+![Alert logs]("./images/flink-dashboard-logs.png")
 
 5. Shutdown Flink
 
