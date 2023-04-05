@@ -8,7 +8,7 @@ Flink can be downloaded from https://flink.apache.org/downloads/
 ## Fraud Detector
 Fraudulent transactions in an account can be detected by certain patterns in a sequence of transactions. An example of a fraudulent transaction is illustrated below with a low value transaction followed immediately by a high value transaction. The full example with details is available at [Fraud Detection Example](https://nightlies.apache.org/flink/flink-docs-release-1.17/docs/try-flink/datastream/).
 
-![Fraud Transactions]("./images/fraud-transactions.png")
+![Fraud Transactions](./images/fraud-transactions.png)
 
 ## Build and Package Streaming Application
 1. Build the streaming application
@@ -56,7 +56,7 @@ In a browser, open the console at http://localhost:8081/
 In the GUI console navigate to
 Dashboard > Task Manager > Logs and view alerts in the logs
 
-![Alert logs]("./images/flink-dashboard-logs.png")
+![Alert logs](./images/flink-dashboard-logs.png)
 
 5. Shutdown Flink
 
