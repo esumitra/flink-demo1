@@ -20,9 +20,10 @@ public class FraudDetector extends KeyedProcessFunction<Long, Transaction, Alert
     private static final long ONE_MINUTE = 60 * 1000;
 
     private transient ValueState<Boolean> flagState;
+    private transient ValueState<Long> timerState;
 
     /**
-     * register the state
+     * register the state (flag, timer)
      * @param parameters
      */
     @Override
@@ -31,11 +32,16 @@ public class FraudDetector extends KeyedProcessFunction<Long, Transaction, Alert
                 "flag",
                 Types.BOOLEAN);
         flagState = getRuntimeContext().getState(flagDescriptor);
+
+        ValueStateDescriptor<Long> timerDescriptor = new ValueStateDescriptor<>(
+                "timer-state",
+                Types.LONG);
+        timerState = getRuntimeContext().getState(timerDescriptor);
     }
 
     /**
      * stateful processing of the elements in the stream
-     * state = boolean flag for small transactions,
+     * state = boolean flag for small transactions, timer for transaction relative time
      * @param transaction
      * @param context
      * @param collector
@@ -61,7 +67,7 @@ public class FraudDetector extends KeyedProcessFunction<Long, Transaction, Alert
             }
 
             // Clean up our state
-            flagState.clear();
+            cleanUp(context);
         }
 
         // reset flag
@@ -69,5 +75,32 @@ public class FraudDetector extends KeyedProcessFunction<Long, Transaction, Alert
             // Set the flag to true
             flagState.update(true);
         }
+        // set the timer and timer state
+        long timer = context.timerService().currentProcessingTime() + ONE_MINUTE;
+        context.timerService().registerProcessingTimeTimer(timer);
+        timerState.update(timer);
+    }
+
+    /**
+     * reset transaction flag after 1 minute
+     * @param timestamp
+     * @param ctx
+     * @param out
+     */
+    @Override
+    public void onTimer(long timestamp, OnTimerContext ctx, Collector<Alert> out) {
+        // remove flag after 1 minute
+        timerState.clear();
+        flagState.clear();
+    }
+
+    private void cleanUp(Context ctx) throws Exception {
+        // delete timer
+        Long timer = timerState.value();
+        ctx.timerService().deleteProcessingTimeTimer(timer);
+
+        // clean up all state
+        timerState.clear();
+        flagState.clear();
     }
 }
