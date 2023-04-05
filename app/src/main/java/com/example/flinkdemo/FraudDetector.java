@@ -1,5 +1,9 @@
 package com.example.flinkdemo;
 
+import org.apache.flink.api.common.state.ValueState;
+import org.apache.flink.api.common.state.ValueStateDescriptor;
+import org.apache.flink.api.common.typeinfo.Types;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
 import org.apache.flink.walkthrough.common.entity.Alert;
@@ -15,15 +19,55 @@ public class FraudDetector extends KeyedProcessFunction<Long, Transaction, Alert
     private static final double LARGE_AMOUNT = 500.00;
     private static final long ONE_MINUTE = 60 * 1000;
 
+    private transient ValueState<Boolean> flagState;
+
+    /**
+     * register the state
+     * @param parameters
+     */
+    @Override
+    public void open(Configuration parameters) {
+        ValueStateDescriptor<Boolean> flagDescriptor = new ValueStateDescriptor<>(
+                "flag",
+                Types.BOOLEAN);
+        flagState = getRuntimeContext().getState(flagDescriptor);
+    }
+
+    /**
+     * stateful processing of the elements in the stream
+     * state = boolean flag for small transactions,
+     * @param transaction
+     * @param context
+     * @param collector
+     * @throws Exception
+     */
     @Override
     public void processElement(
             Transaction transaction,
             Context context,
             Collector<Alert> collector) throws Exception {
 
-        Alert alert = new Alert();
-        alert.setId(transaction.getAccountId());
+        // Get the current state for the current key
+        Boolean lastTransactionWasSmall = flagState.value();
 
-        collector.collect(alert);
+        // Check if the flag is set
+        if (lastTransactionWasSmall != null) {
+            if (transaction.getAmount() > LARGE_AMOUNT) {
+                // Output an alert downstream
+                Alert alert = new Alert();
+                alert.setId(transaction.getAccountId());
+
+                collector.collect(alert);
+            }
+
+            // Clean up our state
+            flagState.clear();
+        }
+
+        // reset flag
+        if (transaction.getAmount() < SMALL_AMOUNT) {
+            // Set the flag to true
+            flagState.update(true);
+        }
     }
 }
